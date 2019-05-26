@@ -1,0 +1,1066 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Texture</title>
+    <style>
+
+        body {
+        @include display(flex);
+        @include align-content(center);
+            color: #353535;
+            min-height: 100vh;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 4px;
+            text-align: center;
+            background-color: lightgreen;
+            margin: 0 auto;
+            overflow: hidden;
+
+        }
+
+        #web-gl {
+            height: 100%;
+            width: 100%;
+        }
+        
+
+        .modal {
+  
+  display:none;
+  position: fixed; 
+  z-index: 1; 
+  padding-top: 100px; 
+  left: 0;
+  top: 0;
+  width: 100%; 
+  height: 100%; 
+  overflow: auto; 
+  background-color: rgb(0,0,0); 
+  background-color: rgba(0,0,0,0.4); 
+}
+
+/* Modal Content */
+.modal-content {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+}
+
+/* The Close Button */
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+
+
+
+
+.modalwc {
+  
+  display:block;
+  position: fixed; 
+  z-index: 1; 
+  padding-top: 100px; 
+  left: 0;
+  top: 0;
+  width: 100%; 
+  height: 100%; 
+  overflow: auto; 
+  background-color: rgb(0,0,0); 
+  background-color: rgba(0,0,0,0.4); 
+}
+
+/* Modal Content */
+.modal-contentwc {
+  background-color: #fefefe;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  opacity: 0.8;
+}
+
+/* The Close Button */
+.closewc {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.closewc:hover,
+.closewc:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+    </style>
+
+
+       <script type="text/javascript" src="lib/three.js"></script>
+    <script type="text/javascript" src="lib/OrbitControls.js"></script>
+    <script type="text/javascript" src="lib/HDRCubeTextureLoader.js"></script>
+    <script type="text/javascript" src="lib/Tween.js"></script>
+	<script src="lib/cannon.js"></script>
+	<script src="lib/dat.gui.min.js"></script>
+	<script src="lib/CannonDebugRenderer.js"></script>
+
+</head>
+<body onload="wellcome()">
+<!-- Baraye Namayesh Score va Welcome             -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2 style="font-size:20px">Game Over!!!</h2>
+        </div>
+      </div>
+
+
+      <div id="myModalwc" class="modalwc">
+        <div class="modal-contentwc">
+          <span class="closewc">&times;</span>
+          <h2 style="font-size:20px">
+            Wellcome to Bottle Shooting!<br>
+            This game create by Reza,Amir,Soroush. 
+        </h2>
+        </div>
+      </div>
+	  
+	    <div id="myModalwin" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2 style="font-size:20px" class="Score">** Excellent : You Shooted Bonus Bottle And Get 100 Scores **</h2>
+        </div>
+		</div>
+	
+		<div id="myModal1" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2 style="font-size:20px" class="Score">** Good : Your Score Is More Than 40 **</h2>
+        </div>
+		</div>
+		
+		<div id="myModal2" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <h2 style="font-size:20px" class="Score">** Not Bad : Your Score Is Less Than 40 **</h2>
+        </div>
+		</div>
+		
+<!-- Baraye Namayesh Score va Welcome             -->		
+	
+
+<div id="web-gl">
+</div>
+
+<script id="scriptScene0" type="text/javascript">
+
+    //  Height and Width Variables
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+
+    //  Basic Variables
+    var camera, renderer, scene;
+
+    var spotLight;
+
+    //  Controls Variable
+    var controls;
+	
+    var tween;
+    var target = {x: 10, y: 0, z: 0};
+	//physics
+	var plane,groundBody,groundShape,ball,ballBody,ballShape,table,tableBody,tableShape ,wall ,wallBody,wallShape;
+	var bottle1,bottle1Body,bottle1Shape,bottle2,bottle2Body,bottle2Shape,bottle3,bottle3Body,bottle3Shape;
+	var boxP,boxPBody,boxPShape;
+	var mass,world,timeStep = 1 / 60;
+	var cannonDebugRenderer;
+	var phsyicRenderer = false;
+	var time;
+	var counter1=0,counter2=0;
+	var balls = [];
+	var countBall=0;
+	var ballsBodys = [];
+	var bottleArray =[];
+	var bottleArrayBody =[];
+	var scores;
+	var modal ;
+	
+    init();
+	
+	initCannon();
+	
+    animate();
+
+
+    //  Once everything is loaded, we run our Three.js stuff.
+    function init() {
+
+        scene = new THREE.Scene();
+
+///////////////////////////////////////////////////////////////////////////////////////////
+        //  Cube mapping second method
+		 //.load(['right.png', 'left.png', 'up.png', 'down.png', 'front.png', 'back.png']);
+        var reflectionCube = new THREE.CubeTextureLoader()
+            .setPath('texture/')
+			.load(['space1.jpg', 'space1.jpg', 'space1.jpg', 'space1.jpg', 'space1.jpg', 'space1.jpg']);
+        reflectionCube.format = THREE.RGBFormat;
+		scene.background = reflectionCube;
+		
+		
+		var texture = THREE.ImageUtils.loadTexture('texture/skysphere3.jpg');
+
+        texture.magFilter = THREE.NearestFilter;
+        texture.minFilter = THREE.NearestFilter;
+
+        var sphereGeometry = new THREE.SphereGeometry(150,30,30);
+        var sphereMaterial = new THREE.MeshPhongMaterial( {
+            map:texture,
+            shading: THREE.SmoothShading,
+			side: THREE.DoubleSide
+        } );
+        var space = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        space.position.set(0,0,-20);
+        scene.add(space);
+		
+
+///////////////////////////////////////////////////////////////////////////////////////////
+        //  Create a camera, which defines where we're looking at.
+        camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+
+
+        //  Create a render and set the size
+        renderer = new THREE.WebGLRenderer({antialias: true});
+        renderer.setClearColor(new THREE.Color(0x000000));
+        renderer.setSize(width, height);
+
+		renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		
+       // controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+         // Enable animation loop when using damping or autorotation
+       // controls.enableDamping = false;
+       // controls.dampingFactor = 0.25;
+      //  controls.enableZoom = true;
+
+        //  Position and point the camera to the center of the scene
+        camera.position.x = 0;
+        camera.position.y = 6;
+        camera.position.z = 25;
+		
+        camera.lookAt(scene.position);
+		
+        //  Add the output of the renderer to the html element
+        document.getElementById("web-gl").appendChild(renderer.domElement);
+		window.addEventListener('resize', onWindowResize, false);
+		window.addEventListener('keyup', onDocumentKeyUp, false);
+
+        //  Surface Texture
+        var texture = new THREE.TextureLoader().load('texture/floor2.jpg');
+        texture.repeat.set(10, 10);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.magFilter = THREE.NearestFilter;
+        texture.minFilter = THREE.LinearMipMapLinearFilter;
+		
+        //Surface Mesh
+        var geometry = new THREE.PlaneGeometry(70, 80);
+        var material = new THREE.MeshPhongMaterial({color: 0xcccccc, side: THREE.DoubleSide, map: texture});
+        plane = new THREE.Mesh(geometry, material);
+        plane.rotateX(-Math.PI / 2);
+        plane.position.y = -5;
+        plane.position.z = -30;
+		plane.receiveShadow = true;
+        scene.add(plane);
+
+			
+		
+		// 1 create the  ball
+
+        
+		var texture2 = THREE.ImageUtils.loadTexture('texture/ballImages/SoftballColor.jpg');
+        texture2.magFilter = THREE.NearestFilter;
+        texture2.minFilter = THREE.NearestFilter;
+        var sphereGeometry = new THREE.SphereGeometry(0.75,20,20);
+        var sphereMaterial = new THREE.MeshPhongMaterial( {
+            map:texture2,
+            shading: THREE.SmoothShading
+        } );
+        ball = new THREE.Mesh(sphereGeometry, sphereMaterial);
+		ball.rotation.y += 180;
+		ball.rotation.x += -45;
+        ball.castShadow=true;
+        ball.receiveShadow = true;     
+		balls.push(ball);
+		
+		
+		
+		texture2 = THREE.ImageUtils.loadTexture('texture/ballImages/NewTennisBallColor.jpg');
+        texture2.magFilter = THREE.NearestFilter;
+        texture2.minFilter = THREE.NearestFilter;
+        sphereGeometry = new THREE.SphereGeometry(0.75,20,20);
+        sphereMaterial = new THREE.MeshPhongMaterial( {
+            map:texture2,
+            shading: THREE.SmoothShading
+        } );
+        ball = new THREE.Mesh(sphereGeometry, sphereMaterial);
+		ball.rotation.y += 180;
+		ball.rotation.x += -45;
+        ball.castShadow=true;
+        ball.receiveShadow = true;
+		balls.push(ball);
+		
+		
+		texture2 = THREE.ImageUtils.loadTexture('texture/ballImages/SoftballBump.jpg');
+        texture2.magFilter = THREE.NearestFilter;
+        texture2.minFilter = THREE.NearestFilter;
+        sphereGeometry = new THREE.SphereGeometry(0.75,20,20);
+        sphereMaterial = new THREE.MeshPhongMaterial( {
+            map:texture2,
+            shading: THREE.SmoothShading
+        } );
+        ball = new THREE.Mesh(sphereGeometry, sphereMaterial);
+		ball.rotation.y += 180;
+		ball.rotation.x += -45;
+        ball.castShadow=true;
+        ball.receiveShadow = true;
+		balls.push(ball);
+		
+				
+		scene.add(balls[0]);
+		scene.add(balls[1]);
+		scene.add(balls[2]);
+
+		
+		
+		
+		
+		
+		
+
+//////////////////////////////////////////////////////////////////////////////////////	
+//////////////////////////////////////////////////////////////////////////////////////	
+/////////////////////////////////////////////////////////////////////BOTTLES
+		
+		//create bottle1
+		
+		var textureBo = THREE.ImageUtils.loadTexture('texture/bottle.jpg');
+
+        textureBo.magFilter = THREE.NearestFilter;
+        textureBo.minFilter = THREE.NearestFilter;
+		
+       var BoGeometry = new THREE.BoxGeometry(1, 2, 1);
+	   var BoMaterial = new THREE.MeshPhongMaterial( {
+            map:textureBo,
+            shading: THREE.SmoothShading
+        } );
+				
+        bottle1 = new THREE.Mesh(BoGeometry, BoMaterial);
+        bottle1.castShadow=true;
+        bottle1.receiveShadow = true;
+        scene.add(bottle1);
+		bottleArray.push(bottle1);
+		
+		//create bottle2
+		textureBo = THREE.ImageUtils.loadTexture('texture/bottle33.jpg');
+
+        textureBo.magFilter = THREE.NearestFilter;
+        textureBo.minFilter = THREE.NearestFilter;
+
+        BoGeometry = new THREE.BoxGeometry(1, 2, 1);
+		BoMaterial = new THREE.MeshPhongMaterial( {
+            map:textureBo,
+            shading: THREE.SmoothShading
+        } );
+        bottle2 = new THREE.Mesh(BoGeometry, BoMaterial);
+        bottle2.castShadow=true;
+        bottle2.receiveShadow = true;
+        scene.add(bottle2);
+		bottleArray.push(bottle2);
+		
+
+		//create bottle3
+		textureBo = THREE.ImageUtils.loadTexture('texture/bottle22.jpg');
+
+        textureBo.magFilter = THREE.NearestFilter;
+        textureBo.minFilter = THREE.NearestFilter;
+
+        BoGeometry = new THREE.BoxGeometry(1, 2, 1);
+		BoMaterial = new THREE.MeshPhongMaterial( {
+            map:textureBo,
+            shading: THREE.SmoothShading
+        } );
+        bottle3 = new THREE.Mesh(BoGeometry, BoMaterial);
+        bottle3.castShadow=true;
+        bottle3.receiveShadow = true;
+        scene.add(bottle3);
+		bottleArray.push(bottle3);
+		
+		//create bottle4
+		BoGeometry = new THREE.BoxGeometry(1, 2, 1);
+		BoMaterial = new THREE.MeshPhongMaterial( {
+            map:textureBo,
+            shading: THREE.SmoothShading
+        } );
+        bottle3 = new THREE.Mesh(BoGeometry, BoMaterial);
+        bottle3.castShadow=true;
+        bottle3.receiveShadow = true;
+        scene.add(bottle3);
+		bottleArray.push(bottle3);
+		
+		
+		
+		//create bottle5
+		textureBo = THREE.ImageUtils.loadTexture('texture/bottle33.jpg');
+
+        textureBo.magFilter = THREE.NearestFilter;
+        textureBo.minFilter = THREE.NearestFilter;
+
+        BoGeometry = new THREE.BoxGeometry(1, 2, 1);
+		BoMaterial = new THREE.MeshPhongMaterial( {
+            map:textureBo,
+            shading: THREE.SmoothShading
+        } );
+        bottle2 = new THREE.Mesh(BoGeometry, BoMaterial);
+        bottle2.castShadow=true;
+        bottle2.receiveShadow = true;
+        scene.add(bottle2);
+		bottleArray.push(bottle2);
+		
+		//create bottle6
+		textureBo = THREE.ImageUtils.loadTexture('texture/bottle44.png');
+
+        textureBo.magFilter = THREE.NearestFilter;
+        textureBo.minFilter = THREE.NearestFilter;
+
+       var BoGeometry = new THREE.BoxGeometry(1, 2, 1);
+	   var BoMaterial = new THREE.MeshPhongMaterial( {
+            map:textureBo,
+            shading: THREE.SmoothShading
+        } );
+				
+        bottle1 = new THREE.Mesh(BoGeometry, BoMaterial);
+        bottle1.castShadow=true;
+        bottle1.receiveShadow = true;
+        scene.add(bottle1);	
+		bottleArray.push(bottle1);
+		
+		
+		
+/////////////////////////////////////////////////////////////////////BOTTLES
+////////////////////////////////////////////////////////////////////BOXES		
+
+		//Boxes on the Left
+		var box1;
+        var boxtexture = THREE.ImageUtils.loadTexture('texture/box1.jpg');
+
+        boxtexture.magFilter = THREE.NearestFilter;
+        boxtexture.minFilter = THREE.NearestFilter;
+
+        var boxGeometry = new THREE.BoxGeometry( 5, 5, 5 );
+        var boxMaterial = new THREE.MeshPhongMaterial( {
+            map:boxtexture,
+            shading: THREE.SmoothShading
+        } );
+        box1 = new THREE.Mesh( boxGeometry, boxMaterial );
+        box1.position.set(-25,-2.5,-40);
+		
+        box1.castShadow=true;
+        box1.receiveShadow = true;
+
+        scene.add( box1 );
+
+		//Boxe on the Left with Physics
+		boxGeometry = new THREE.BoxGeometry( 5, 5, 5 );
+        boxMaterial = new THREE.MeshPhongMaterial( {
+            map:boxtexture,
+            shading: THREE.SmoothShading
+        } );
+        boxP = new THREE.Mesh( boxGeometry, boxMaterial );
+		
+        boxP.castShadow=true;
+        boxP.receiveShadow = true;
+
+        scene.add( boxP );
+		
+		
+		
+		//  //Boxes on the Left
+        var boxtexture = THREE.ImageUtils.loadTexture('texture/box1.jpg');
+
+        boxtexture.magFilter = THREE.NearestFilter;
+        boxtexture.minFilter = THREE.NearestFilter;
+
+        var boxGeometry = new THREE.BoxGeometry( 5, 5, 5 );
+        var boxMaterial = new THREE.MeshPhongMaterial( {
+            map:boxtexture,
+            shading: THREE.SmoothShading
+        } );
+        box1 = new THREE.Mesh( boxGeometry, boxMaterial );
+        box1.position.set(-22.5,2.5,-40.0);
+		
+        box1.castShadow=true;
+        box1.receiveShadow = true;
+
+        scene.add( box1 );
+		
+		
+		//Boxes on the Right
+		for(var i=0;i<3;i++){
+		//  Box2
+		var box2;
+        var box2texture = THREE.ImageUtils.loadTexture('texture/box2.jpg');
+
+        box2texture.magFilter = THREE.NearestFilter;
+        box2texture.minFilter = THREE.NearestFilter;
+
+        var box2Geometry = new THREE.BoxGeometry( 5, 5, 5 );
+        var box2Material = new THREE.MeshPhongMaterial( {
+            map:box2texture,
+            shading: THREE.SmoothShading
+        } );
+        box2 = new THREE.Mesh( box2Geometry, box2Material );
+        box2.position.set(20.0,-2.5+5.0*i,-40.0);
+		box2.rotation.y = Math.PI / 5;
+        box2.castShadow=true;
+        box2.receiveShadow = true;
+	
+        scene.add( box2 );
+		
+		}
+
+////////////////////////////////////////////////////////////////////BOXES		
+///////////////////////////////////////////////////////////////////Walls	
+
+		//  WallRight
+		var wallR;
+        var wallRtexture = THREE.ImageUtils.loadTexture('texture/wallRight.jpg');
+
+        wallRtexture.magFilter = THREE.NearestFilter;
+        wallRtexture.minFilter = THREE.NearestFilter;
+
+        var wallRGeometry = new THREE.BoxGeometry( 0.5, 12.0, 40.0 );
+        var wallRMaterial = new THREE.MeshPhongMaterial( {
+            map:wallRtexture,
+            shading: THREE.SmoothShading
+        } );
+        wallR = new THREE.Mesh( wallRGeometry, wallRMaterial );
+        wallR.position.set(22.0,1.0,-12.0);
+		
+        wallR.castShadow=true;
+        wallR.receiveShadow = true;
+
+        scene.add( wallR );
+		
+		//  WallLeft
+		var wallL;
+        var wallLtexture = THREE.ImageUtils.loadTexture('texture/wallLeft.jpg');
+
+        wallLtexture.magFilter = THREE.NearestFilter;
+        wallLtexture.minFilter = THREE.NearestFilter;
+
+        var wallLGeometry = new THREE.BoxGeometry( 0.5, 12.0, 40.0 );
+        var wallLMaterial = new THREE.MeshPhongMaterial( {
+            map:wallLtexture,
+            shading: THREE.SmoothShading
+        } );
+        wallL = new THREE.Mesh( wallLGeometry, wallLMaterial );
+        wallL.position.set(-25.0,1.0,-12.0);
+		
+        wallL.castShadow=true;
+        wallL.receiveShadow = true;
+
+        scene.add( wallL );
+		
+		 //  Table for Bottles
+        var texture3 = THREE.ImageUtils.loadTexture('texture/counter2.jpg');
+
+        texture3.magFilter = THREE.NearestFilter;
+        texture3.minFilter = THREE.NearestFilter;
+
+        var cubeGeometry = new THREE.BoxGeometry( 18.0, 5.0, 2.0 );
+        var cubeMaterial = new THREE.MeshPhongMaterial( {
+            map:texture3,
+            shading: THREE.SmoothShading
+        } );
+        table = new THREE.Mesh( cubeGeometry, cubeMaterial );
+        table.castShadow=true;
+        table.receiveShadow = true;
+
+        scene.add( table );
+		
+		
+		//  wall back
+        var texture4 = THREE.ImageUtils.loadTexture('texture/call.jpg');
+
+        texture4.magFilter = THREE.NearestFilter;
+        texture4.minFilter = THREE.NearestFilter;
+
+        var cube2Geometry = new THREE.BoxGeometry( 32.0, 17.5, 1.0 );
+        var cube2Material = new THREE.MeshPhongMaterial( {
+            map:texture4,
+            shading: THREE.SmoothShading
+        } );
+        wall = new THREE.Mesh( cube2Geometry, cube2Material );
+        wall.castShadow=true;
+        wall.receiveShadow = true;
+
+        scene.add( wall );
+			
+			
+			
+        //  Add  ambient lighting
+        var ambiColor = "#ffffff";
+        var ambientLight = new THREE.AmbientLight(ambiColor, 0.5);
+        scene.add(ambientLight);
+			
+	//  Add Point Light
+		var c2=0x7f7f7f;
+		
+		var Phelp2 = new THREE.SphereBufferGeometry( 0.2, 1.6, 0.8 );
+        var pointLight2 = new THREE.PointLight(c2, 1, 0, 2);
+        pointLight2.position.set(20, 35, 20.0);
+        pointLight2.castShadow = true;
+        pointLight2.shadow.camera.near = 0.1;
+        pointLight2.shadow.camera.far = 1000;
+		
+		pointLight2.add( new THREE.Mesh( Phelp2, new THREE.MeshBasicMaterial( { color: 0xffee00 } ) ) );
+		
+        scene.add(pointLight2);
+		
+		
+		
+///////////////////////////////////////////////Sound
+		var listener = new THREE.AudioListener();
+        camera.add( listener );
+
+		var audioLoader = new THREE.AudioLoader();
+		
+		var soundY = new THREE.PositionalAudio(listener);
+        audioLoader.load('music/chainz-ft-wiz-khalif-we-own-it.mp3',function (buffer) {
+            soundY.setBuffer( buffer );
+            soundY.setRefDistance(100);
+			soundY.setLoop(true);
+			//soundY.setVolume(50);
+            soundY.play();
+        });
+		
+		plane.add(soundY);
+		
+		
+		
+		
+    }
+	
+	
+	function initCannon() {
+
+        world = new CANNON.World();
+        world.gravity.set(0, -25.87, 0);
+        world.broadphase = new CANNON.NaiveBroadphase();
+        world.solver.iterations = 20;
+//        var solver = new CANNON.GSSolver();
+//        solver.iterations = 20;
+//        solver.tolerance = 0.7;
+//        world.solver = solver;
+		world.defaultContactMaterial.contactEquationStiffness = 1e9;
+        world.defaultContactMaterial.contactEquationRelaxation = 4;
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////180, 50, 20	       
+		tableShape = new CANNON.Box(new CANNON.Vec3(9.0, 2.5, 1.0));
+        tableBody = new CANNON.Body({mass: 30});    
+		tableBody.addShape(tableShape);
+        tableBody.angularDamping = 0.5;
+		tableBody.position.set(0,-2.0,-40.0);
+        world.add(tableBody);
+		
+		
+		wallShape = new CANNON.Box(new CANNON.Vec3(16, 8.75, 1));
+        wallBody = new CANNON.Body({mass: 0});
+		wallBody.addShape(wallShape);
+        wallBody.angularDamping = 0.5;
+		wallBody.position.set(0,3.75,-55);;
+        world.add(wallBody);
+		
+		boxPShape = new CANNON.Box(new CANNON.Vec3(2.5, 2.5, 2.5));
+        boxPBody = new CANNON.Body({mass: 30});    
+		boxPBody.addShape(boxPShape);
+        boxPBody.angularDamping = 0.5;
+		boxPBody.position.set(-20,-2.5,-40);
+        world.add(boxPBody);
+		
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////		
+		ballShape = new CANNON.Sphere(0.75);
+        ballBody = new CANNON.Body({mass: 0.5});		
+		ballBody.addShape(ballShape);
+        ballBody.angularDamping = 0.5;
+		ballBody.position.set(-14,0,-5);				
+		ballsBodys.push(ballBody);	
+		
+		ballShape = new CANNON.Sphere(0.75);
+        ballBody = new CANNON.Body({mass: 0.5});		
+		ballBody.addShape(ballShape);
+        ballBody.angularDamping = 0.5;
+		ballBody.position.set(-14,0,0);				
+		ballsBodys.push(ballBody);
+
+		ballShape = new CANNON.Sphere(0.75);
+        ballBody = new CANNON.Body({mass: 0.5});		
+		ballBody.addShape(ballShape);
+        ballBody.angularDamping = 0.5;
+		ballBody.position.set(-14,0,5);				
+		ballsBodys.push(ballBody);
+	
+	
+        world.add(ballsBodys[0]);
+		world.add(ballsBodys[1]);
+		world.add(ballsBodys[2]);
+		
+		
+		
+		
+		
+		
+		
+		
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+        bottle1Shape = new CANNON.Box(new CANNON.Vec3(0.5,1.0, 0.5));
+		bottle1Body = new CANNON.Body({mass: 0.5});		
+		bottle1Body.addShape(bottle1Shape);
+
+        bottle1Body.angularDamping = 0.75;
+		bottle1Body.position.set(-18.25,5.0,-40.0);
+//        world.add(bottle1Body);
+		bottleArrayBody.push(bottle1Body);
+		
+		
+		bottle1Shape = new CANNON.Box(new CANNON.Vec3(0.5,1.0, 0.5));
+		bottle1Body = new CANNON.Body({mass: 0.5});		
+		bottle1Body.addShape(bottle1Shape);
+
+        bottle1Body.angularDamping = 0.75;
+		bottle1Body.position.set(-5,1.0,-40.0);
+//        world.add(bottle1Body);
+		bottleArrayBody.push(bottle1Body);
+
+		
+
+		bottle2Shape = new CANNON.Box(new CANNON.Vec3(0.5,1.0, 0.5));
+		bottle2Body = new CANNON.Body({mass: 0.5});		
+		bottle2Body.addShape(bottle2Shape);
+		
+        bottle2Body.angularDamping = 0.75;
+		bottle2Body.position.set(0,1.0,-40.0);
+//        world.add(bottle2Body);
+		bottleArrayBody.push(bottle2Body);
+
+		
+        bottle3Shape = new CANNON.Box(new CANNON.Vec3(0.5,1.0, 0.5));
+		bottle3Body = new CANNON.Body({mass: 0.5});		
+		bottle3Body.addShape(bottle3Shape);
+
+        bottle3Body.angularDamping = 0.75;
+		bottle3Body.position.set(5.75,1.0,-40.0);
+//        world.add(bottle3Body);
+		bottleArrayBody.push(bottle3Body);
+		
+		
+		bottle3Shape = new CANNON.Box(new CANNON.Vec3(0.5,1.0, 0.5));
+		bottle3Body = new CANNON.Body({mass: 0.5});		
+		bottle3Body.addShape(bottle3Shape);
+
+        bottle3Body.angularDamping = 0.75;
+		bottle3Body.position.set(7.0,1.0,-40.0);
+//        world.add(bottle3Body);
+		bottleArrayBody.push(bottle3Body);
+		
+		bottle3Shape = new CANNON.Box(new CANNON.Vec3(0.5,1.0, 0.5));
+		bottle3Body = new CANNON.Body({mass: 0.5});		
+		bottle3Body.addShape(bottle3Shape);
+
+        bottle3Body.angularDamping = 0.75;
+		bottle3Body.position.set(6.50,3.0,-40.0);
+//        world.add(bottle3Body);
+		bottleArrayBody.push(bottle3Body);
+		
+	
+
+		world.add(bottleArrayBody[0]);
+		world.add(bottleArrayBody[1]);
+		world.add(bottleArrayBody[2]);
+		world.add(bottleArrayBody[3]);
+		world.add(bottleArrayBody[4]);
+		world.add(bottleArrayBody[5]);
+////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////
+		
+		groundShape = new CANNON.Plane();
+        groundBody = new CANNON.Body({mass: 0});
+        groundBody.addShape(groundShape);
+        world.add(groundBody);
+
+        groundBody.position.copy(plane.position);
+        groundBody.quaternion.copy(plane.quaternion);
+
+        cannonDebugRenderer = new THREE.CannonDebugRenderer(scene, world);
+
+    }
+	
+	
+	
+    function animate() {
+		
+		
+		requestAnimationFrame(animate);
+       // TWEEN.update();
+		updatePhysics();
+
+        if (phsyicRenderer)
+            cannonDebugRenderer.update();	
+			
+		render();
+        
+    }
+	
+	function updatePhysics() {
+
+        // Step the physics world
+        world.step(timeStep);
+
+        // Copy coordinates from Cannon.js to Three.js
+
+		bottleArray[0].position.copy(bottleArrayBody[0].position);
+		bottleArray[0].quaternion.copy(bottleArrayBody[0].quaternion);
+		
+
+		bottleArray[1].position.copy(bottleArrayBody[1].position);
+		bottleArray[1].quaternion.copy(bottleArrayBody[1].quaternion);
+		
+		
+		bottleArray[2].position.copy(bottleArrayBody[2].position);
+		bottleArray[2].quaternion.copy(bottleArrayBody[2].quaternion);
+		
+		bottleArray[3].position.copy(bottleArrayBody[3].position);
+		bottleArray[3].quaternion.copy(bottleArrayBody[3].quaternion);
+		
+		bottleArray[4].position.copy(bottleArrayBody[4].position);
+		bottleArray[4].quaternion.copy(bottleArrayBody[4].quaternion);
+		
+		bottleArray[5].position.copy(bottleArrayBody[5].position);
+		bottleArray[5].quaternion.copy(bottleArrayBody[5].quaternion);
+		
+		
+		balls[0].position.copy(ballsBodys[0].position);
+        balls[0].quaternion.copy(ballsBodys[0].quaternion);
+
+		balls[1].position.copy(ballsBodys[1].position);
+        balls[1].quaternion.copy(ballsBodys[1].quaternion);
+		
+		balls[2].position.copy(ballsBodys[2].position);
+        balls[2].quaternion.copy(ballsBodys[2].quaternion);
+		
+		table.position.copy(tableBody.position);
+        table.quaternion.copy(tableBody.quaternion);
+		
+		wall.position.copy(wallBody.position);
+        wall.quaternion.copy(wallBody.quaternion);
+
+		boxP.position.copy(boxPBody.position);
+        boxP.quaternion.copy(boxPBody.quaternion);
+		
+    }
+
+	function render() {
+
+       // controls.update();
+	   renderer.render( scene, camera );
+		ballMove();
+        camera.updateMatrixWorld();
+        
+        
+
+    }
+	
+		var i=0;
+		function onDocumentKeyUp(event){
+		if(event.keyCode == 32){
+		
+			if(countBall<3)
+			ballsBodys[countBall].velocity.set(0, 18, -75);
+			countBall++;
+
+			if(countBall>3)
+			{
+				
+				
+				camera.position.x = 0;
+				camera.position.y = 5;
+				camera.position.z = -25;
+				camera.lookAt(table.position);
+				
+				
+		
+				
+				
+				scores = 0;
+				
+				checked();
+				//alert(scores);
+				if(scores >= 100)
+					modal = document.getElementById('myModalwin');		
+					
+				else if(scores >= 40)
+					modal = document.getElementById('myModal1');
+					
+				else if(scores < 40 && scores > 0)
+					modal = document.getElementById('myModal2');
+				else 
+					modal = document.getElementById('myModal');
+				modal.style.display = "block";
+				window.setTimeout (Rel, 4000);
+				//document.location.reload(true);
+      
+			}
+					
+		}
+				
+	}
+		
+	function Rel(){
+		document.location.reload(true);
+		
+	}
+	
+  // Get the modal
+
+  var span = document.getElementsByClassName("close")[0];
+  span.onclick = function() {
+  modal.style.display = "none";
+	}
+
+function checked(){	
+	
+    for(var j=0 ;j < 6;j=j+1){
+		if(bottleArrayBody[j].position.y < 0){
+			if(j == 0)	scores = scores +100 ;
+			
+			else scores = scores +10 ;
+			
+		}
+							
+	}
+			
+}
+
+
+
+function wellcome()
+{
+    var modalwc = document.getElementById("myModalwc");
+    var spanwc = document.getElementsByClassName("closewc")[0];
+    spanwc.onclick = function() {
+    modalwc.style.display = "none";
+    }
+    window.onclick = function(event) {
+    if (event.target == modalwc) {
+        modalwc.style.display = "none";
+    }
+    }
+}
+
+
+
+	function ballMove(){
+	
+			
+
+			if(counter1 < 100){
+				if(countBall <= 0){
+					ballsBodys[0].position.x += 0.25;
+					ballsBodys[0].angularVelocity.set(0, 0, -10);
+				}
+				
+				
+				if(countBall <= 1){
+					ballsBodys[1].position.x += 0.25;
+					ballsBodys[1].angularVelocity.set(0, 0, -10);
+				}
+				
+				if(countBall <= 2){
+					ballsBodys[2].position.x += 0.25;
+					ballsBodys[2].angularVelocity.set(0, 0, -10);
+				};
+				
+				counter1++;
+				
+			}
+				
+			else if(counter2 < 100 && counter1==100){
+				if(countBall <= 0){
+					ballsBodys[0].position.x -= 0.25;
+					ballsBodys[0].angularVelocity.set(0, 0, +10);
+				}
+				if(countBall <= 1){
+					ballsBodys[1].position.x -= 0.25;
+					ballsBodys[1].angularVelocity.set(0, 0, +10);
+				}
+				if(countBall <= 2){
+					ballsBodys[2].position.x -= 0.25;
+					ballsBodys[2].angularVelocity.set(0, 0, +10);
+				}
+				
+				counter2++;
+			}
+			else{
+				counter1=0;
+				counter2=0;
+			}
+			
+	
+	
+	}
+
+	
+	function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+	
+	
+</script>
+</body>
+</html>
